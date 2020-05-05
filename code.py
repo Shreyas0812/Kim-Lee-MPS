@@ -17,9 +17,23 @@ class kimLee():
 		for index, val in enumerate(self.lines):
 			self.group[index % self.bots] = np.append(self.group[index % self.bots], np.array([val]), axis = 0)
 		print(self.group)
-
+		
+		#length of the lines
+		self.length = []
+		for l in lines:
+			x1 = l[0][0]
+			y1 = l[0][1]
+			x2 = l[1][0]
+			y2 = l[1][1]
+			
+			#print (x1,y1,x2,y2)
+			dist = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+			self.length.append(dist)
+			
 	# Initialize population
 	def initPop(self):
+		self.population = np.random.random_integers(low = 1, high = self.numLines, size = (self.bots, self.numLines))
+		print (self.population)
 		#First initialize individuals then stack them into a list
 		#for i in range(self.numViduals):
 			#vidual = (randomly initialize for first iteration)
@@ -65,6 +79,7 @@ class kimLee():
 
 	# Main function: similar to fig 6 in paper.
 	def main(self):
+		self.initPop()
 
 
 # ToDo Later: Vizualizer function to plot/animate algorithm
@@ -87,5 +102,6 @@ if __name__ == '__main__':
 	# Initial position of each robot
 	pose = np.array([(0,1), (1,2), (2,3)])
 	test = kimLee(numBots = 3, lines = lineSet, pose = pose)
+	test.main()
 
 
