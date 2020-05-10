@@ -10,12 +10,12 @@ class kimLee():
 
 		#self.numViduals = 
 		self.population = []
-		self.fitness = []
 		
+		'''
 		self.group = np.empty((0, 2, 2), float)
 		self.group = [self.group for i in range(self.bots)]
 		
-		'''
+		
 		# Initialize group
 		for index, val in enumerate(self.lines):
 			self.group[index % self.bots] = np.append(self.group[index % self.bots], np.array([val]), axis = 0)
@@ -32,7 +32,7 @@ class kimLee():
 	def initPop(self):
 		pop_size = 4
 		self.population = np.random.random_integers(low = 0, high = self.bots-1, size = (pop_size, self.numLines))
-		print (self.population)
+		print ('\nPossible Solutions:\n',self.population)
 		#First initialize individuals then stack them into a list
 		#for i in range(self.numViduals):
 			#vidual = (randomly initialize for first iteration)
@@ -79,36 +79,45 @@ class kimLee():
 	
 	# Return list of start/end points of closest line from current pose
 	# Make sure start/end are in corect order
-	def nextLine(self, pose, group, bot_index):
-		line = []
+	def nextLine(self, pose, group, bot_index, line = []):
 		dist = []
-		line.append(pose[bot_index])
-		
 		for pts in group:
-			distbtw = self.nextDist(pose = pose[bot_index], line = pts, bot_index = not_index, chpose = 0)
+			distbtw = self.nextDist(pose = pose[bot_index], line = pts, bot_index = bot_index, chpose = 0)
 			dist.append(distbtw)	#distance btw pose and all lines
 		
 		if len(dist) == 0:
+			if (len(line) == 0):
+				p = list(pose[bot_index])
+				line.append(p)
 			idx = None
 			line.append([])
+			return line
+		
 		elif len(dist) == 1:
+			if (len(line) == 0):
+				p = list(pose[bot_index])
+				line.append(p)
 			idx = 0
 			start, end = self.nextDist(pose = pose[bot_index], line = group[idx], bot_index = bot_index, chpose =1)
 			line.append(start)
 			line.append(end)
-		else:
-			for num in range(len(dist)):
-				idx = dist.index(min(dist))
-				start, end = self.nextDist(pose = pose[bot_index], line = group[idx], bot_index = bot_index, chpose =1)
-				line.append(start)
-				line.append(end)
-				dist[idx] = 9999999
+			return line 
 		
-		print(line)
-		return line
-
-
-
+		else:
+			if (len(line) == 0):
+				p = list(pose[bot_index])
+				line.append(p)
+	
+			idx = dist.index(min(dist))
+			start, end = self.nextDist(pose = pose[bot_index], line = group[idx], bot_index = bot_index, chpose = 1)
+			line.append(start)
+			line.append(end)
+			
+			pose[bot_index] = end
+			group.remove(group[idx])
+			line1 = self.nextline(pose, group, bot_index, line)
+			return line				
+		
 	# Heuristics func in paper: Return distance/cost of a single input group
 	def groupDist(self, group):
 		'''
@@ -152,8 +161,11 @@ class kimLee():
 			
 			bot_index = 0
 			for group in groups:
-				line = self.nextline(pose, group, bot_index)
+				line = self.nextline(pose, group, bot_index, line = [])
 				bot_index = bot_index + 1
+				print('line',line)
+				print ('\nNext Group\n')
+			print ('\n Next Population)
 		
 # ToDo Later: Vizualizer function to plot/animate algorithm
 class vizualizer():
