@@ -14,22 +14,18 @@ class kimLee():
 		
 		self.group = np.empty((0, 2, 2), float)
 		self.group = [self.group for i in range(self.bots)]
-
+		
+		'''
 		# Initialize group
 		for index, val in enumerate(self.lines):
 			self.group[index % self.bots] = np.append(self.group[index % self.bots], np.array([val]), axis = 0)
 		print(self.group)
+		'''
 		
 		#length of the lines
 		self.length = []
 		for l in lines:
-			x1 = l[0][0]
-			y1 = l[0][1]
-			x2 = l[1][0]
-			y2 = l[1][1]
-			
-			#print (x1,y1,x2,y2)
-			dist = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+			dist = np.linalg.norm(l[0] - l[1])
 			self.length.append(dist)
 			
 	# Initialize population
@@ -44,19 +40,21 @@ class kimLee():
 
 
 	# Return list of groups from a given individual
-	def groupGenes(self):
+	def groupGenes(self, pop_sol):
+		groups = []
+		for i in range(self.bots):
+			line_index = 0
+			val = []
+			for bot_index in pos_sol:
+				if i == bot_index:
+					val.append(self.lines[line_index])
+				line_index = line_index + 1
+			groups.append(val)
 		# An individual is self.popolation[i], i < self.numViduals
 		return groups
 
-
-	# Return list of start/end points of closest line from current pose
-	# Make sure start/end are in corect order
-	def nextLine(self, pose):
-		return line
-
-
 	# Function D in paper: returns dist b/w oldpose and next line
-	def nextDist(self, pose, line, index_bot):
+	def nextDist(self, pose, line, index_bot, chpose):
 		x0 = pose[0]
 		y0 = pose[1]
 		x1 = line[0][0]
@@ -67,16 +65,52 @@ class kimLee():
 		d1 = math.sqrt((x1 - x0)**2 + (y1 - y0)**2)
 		d2 = math.sqrt((x2 - x0)**2 + (y2 - y0)**2)
 		
-		if d1 < d2:
-			self.pose[index_bot] = [x2, y2]
-			return d1
+		if chpose == 1:
+			if d1 < d2:
+				end = [x2, y2]
+				start = [x1, y1]
+				return start,end
+			else:
+				end = [x1, y1]
+				start = [x2, y2]
+				return start, end
+		dist = min(d1, d2)
+		return dist
+	
+	# Return list of start/end points of closest line from current pose
+	# Make sure start/end are in corect order
+	def nextLine(self, pose, group, bot_index):
+		line = []
+		dist = []
+		line.append(pose[bot_index])
+		
+		for pts in group:
+			distbtw = self.nextDist(pose = pose[bot_index], line = pts, bot_index = not_index, chpose = 0)
+			dist.append(distbtw)	#distance btw pose and all lines
+		
+		if len(dist) == 0:
+			idx = None
+			line.append([])
+		elif len(dist) == 1:
+			idx = 0
+			start, end = self.nextDist(pose = pose[bot_index], line = group[idx], bot_index = bot_index, chpose =1)
+			line.append(start)
+			line.append(end)
 		else:
-			self.pose[index_bot] = [x1, y1]
-			return d2
+			idx = dist.index(min(dist))
+			start, end = self.nextDist(pose = pose[bot_index], line = group[idx], bot_index = bot_index, chpose =1)
+			line.append(start)
+			line.append(end)
+			#Inclomplete
+		
+		print(line)
+		return line
+
 
 
 	# Heuristics func in paper: Return distance/cost of a single input group
 	def groupDist(self, group):
+		'''
 		index_line = 0
 		c = np.empty(len(self.pose))
 		for i in range(len(c)):
@@ -88,6 +122,7 @@ class kimLee():
 			index_line = index_line + 1
 			
 		cost = max(c)
+		'''
 		return cost
 
 
@@ -110,12 +145,15 @@ class kimLee():
 	def main(self):
 		self.initPop()
 		
-		for sol in self.population:
+		for pos_sol in self.population:
 			self.pose = pose #initial pose should not change for diff soln
-			cost = self.groupDist(sol)
-			self.fitness.append(cost)
-		print('Fitness:\n', self.fitness)
-
+			groups = self.groupGenes(pos_sol)
+			
+			bot_index = 0
+			for group in groups:
+				line = self.nextline(pose, group, bot_index)
+				bot_index = bot_index + 1
+		
 # ToDo Later: Vizualizer function to plot/animate algorithm
 class vizualizer():
 	def plot(self):
