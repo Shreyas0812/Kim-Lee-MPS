@@ -154,9 +154,9 @@ class kimLee():
 	# Main function: similar to fig 6 in paper.
 	def main(self):
 		self.initPop()
-		
+		const_pose = list(self.pose)
 		for pos_sol in self.population:
-			self.pose = pose #initial pose should not change for diff soln
+			pose = np.array(const_pose) #initial pose should not change for diff soln
 			groups = self.groupGenes(pos_sol)
 			
 			bot_index = 0
