@@ -97,11 +97,12 @@ class kimLee():
 			line.append(start)
 			line.append(end)
 		else:
-			idx = dist.index(min(dist))
-			start, end = self.nextDist(pose = pose[bot_index], line = group[idx], bot_index = bot_index, chpose =1)
-			line.append(start)
-			line.append(end)
-			#Inclomplete
+			for num in range(len(dist)):
+				idx = dist.index(min(dist))
+				start, end = self.nextDist(pose = pose[bot_index], line = group[idx], bot_index = bot_index, chpose =1)
+				line.append(start)
+				line.append(end)
+				dist[idx] = 9999999
 		
 		print(line)
 		return line
