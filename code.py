@@ -8,43 +8,21 @@ class kimLee():
 		self.bots = numBots
 		self.pose = pose
 
-		#self.numViduals = 
 		self.population = []
-		self.fitness = []
 		
 		self.bestPop = [] 	#To store all 'best populations', b in the paper
 		self.bestPop_cost = []	#and their respective costs
 		
-		'''
-		self.group = np.empty((0, 2, 2), float)
-		self.group = [self.group for i in range(self.bots)]
+		self.iteration = 0
 		
-		
-		# Initialize group
-		for index, val in enumerate(self.lines):
-			self.group[index % self.bots] = np.append(self.group[index % self.bots], np.array([val]), axis = 0)
-		print(self.group)
-		'''
-		
-		#length of the lines
-		self.length = []
-		for l in lines:
-			dist = np.linalg.norm(l[0] - l[1])
-			self.length.append(dist)
-			
 	# Initialize population
 	def initPop(self):
 		pop_size = 4
 		self.population = np.random.random_integers(low = 0, high = self.bots-1, size = (pop_size, self.numLines))
 		print ('\nPossible Solutions:\n',self.population)
-		#First initialize individuals then stack them into a list
-		#for i in range(self.numViduals):
-			#vidual = (randomly initialize for first iteration)
-			#self.population.append(self.population, vidual)
-
 
 	# Return list of groups from a given individual
-	def groupGenes(self, pop_sol):
+	def groupGenes(self, pos_sol):
 		groups = []
 		for i in range(self.bots):
 			line_index = 0
@@ -54,7 +32,6 @@ class kimLee():
 					val.append(self.lines[line_index])
 				line_index = line_index + 1
 			groups.append(val)
-		# An individual is self.popolation[i], i < self.numViduals
 		return groups
 
 	# Function D in paper: returns dist b/w oldpose and next line
@@ -144,19 +121,64 @@ class kimLee():
 		
 		self.bestPop.append(self.population[best_idx])
 		self.bestPop_cost.append(best)
-		#self.bestPop = 
-
 
 	# Alter function in paper
-	def mutation(self):
-	def crossover(self):
+	def select_parents(self, fitness):
+		num_parents = int(len(self.population)/2)
+		parents = np.empty((num_parents, self.population.shape[1]))
+		
+		for pn in range(num_parents):
+			max_fitness_idx = np.where(fitness == np.min(fitness))
+			max_fitness_idx = int(max_fitness_idx[0][0])	
+			parents[pn, :] = self.population[max_fitness_idx, :]
+			fitness[max_fitness_idx] = 999999999999def crossover(self):
+		
+		return parents
+	
+	def crossover(self, parents):
+		pop_size = len(self.population)
+		offspring_size = (pop_size - parents.shape[0], parents.shape[1])
+		offspring = np.empty(offspring_size)
+		
+		#2 point crossover
+		crossover_point1 = np.uint8(offspring_size[1]/3)
+		crossover_point2 = np.uint8((2*offspring_size[1])/3)
+		
+		for k in range(offspring_size[0]):
+			parent1_idx = k%parents.shape[0]
+			parent2_idx = (k+1)%parents.shape[0]
+			offspring[k, crossover_point2:] = parents[parent1_idx, crossover_point2:]	
+			offspring[k, 0:crossover_point1] = parents[parent1_idx, 0:crossover_point1]
+			offspring[k, crossover_point1:crossover_point2] = parents[parent2_idx, crossover_point1:crossover_point2]
+			
+		return offspring
+		
+	def mutation(self, offspring):
+		
+		#Reciprocal exchange
+		number = offspring.shape[1]
+		
+		for pop in offspring:
+			idx1 = np.random.random_integers(0, number-1)
+			idx2 = np.random.random_integers(0, number-1)
+			
+			while idx1 == idx2:
+				idx2 = np.random.random_integers(0, number-1)
+			
+			temp = pop[idx1]
+			pop[idx1] = pop[idx2]
+			pop[idx2] = temp
+		
+		return offspring
 
 
 	# Main function: similar to fig 6 in paper.
 	def main(self):
-		self.initPop()
+		if (len(self.population) == 0):
+			self.initPop()
 		
 		const_pose = list(self.pose)
+		fitness = []
 		for pos_sol in self.population:
 			pose = np.array(const_pose) #initial pose should not change for diff soln
 			
@@ -173,13 +195,42 @@ class kimLee():
 				print ('Next Group')
 			
 			maxCost = self.groupCost(groupscost)
-			self.fitness.append(maxCost)
+			fitness.append(maxCost)
 	
 			print ('\n Next Population\n')
-		print('Costs for the population:\n',self.fitness)
+		
+		#print('Costs for the population:\n',fitness)
 		self.evaluate()
 		
+		if self.iteration < 50:
+			parents = self.select_parents(fitness = fitness)
+			
+			offspring_crossover = self.crossover(parents)
+			
+			offspring_mutation = self.mutation(offspring = offspring_crossover)
+			
+			self.population = [] #resetting the population
+			
+			for parent in parents:
+				parent = list(parent)
+				self.population.append(parent)
+				
+			for new_pop in offspring_mutation:
+				new_pop = list(new_pop)
+				self.population.append(new_pop)
+			
+			self.population = np.array(self.population)
+			self.iteration = self.iteration + 1
+			
+			self.main()
 		
+		else:
+			idx =  self.bestPop_cost.index(min(self.bestPop_cost))
+			final_best_pop = self.bestPop[idx]
+			final_best_cost = self.bestPop_cost[idx]
+			print ('Final Best Population: ', final_best_pop, final_best_cost)
+						   
+						   
 # ToDo Later: Vizualizer function to plot/animate algorithm
 class vizualizer():
 	def plot(self):
