@@ -10,6 +10,10 @@ class kimLee():
 
 		#self.numViduals = 
 		self.population = []
+		self.fitness = []
+		
+		self.bestPop = [] 	#To store all 'best populations', b in the paper
+		self.bestPop_cost = []	#and their respective costs
 		
 		'''
 		self.group = np.empty((0, 2, 2), float)
@@ -90,7 +94,6 @@ class kimLee():
 				p = list(pose[bot_index])
 				line.append(p)
 			idx = None
-			line.append([])
 			return line
 		
 		elif len(dist) == 1:
@@ -119,30 +122,28 @@ class kimLee():
 			return line				
 		
 	# Heuristics func in paper: Return distance/cost of a single input group
-	def groupDist(self, group):
-		'''
-		index_line = 0
-		c = np.empty(len(self.pose))
-		for i in range(len(c)):
-			c[i] = 0
-			
-		for index_bot in group:
-			dist = self.nextDist(pose = self.pose[index_bot], line = self.lines[index_line], index_bot = index_bot)
-			c[index_bot] = c[index_bot] + dist + self.length[index_line]
-			index_line = index_line + 1
-			
-		cost = max(c)
-		'''
+	def groupDist(self, line):
+		cost = 0
+		for index in range(len(line) - 1):
+			pt1 = line[index]
+			pt2 = line[index+1]
+			dist = math.sqrt( ((pt1[0] - pt2[0])**2)+((pt1[1] - pt2[1])**2) )
+			cost = cost + dist
 		return cost
 
 
 	# Returns cost of individual, i.e. Max(G1,G2,...)
 	def groupCost(self, groupsCost):
+		maxCost = max(groupsCost)
 		return maxCost
-
 
 	# Evalauate func in paper: Assigns best individual of the population
 	def evaluate(self):
+		best = min(self.fitness)
+		best_idx = self.fitness.index(best)
+		
+		self.bestPop.append(self.population[best_idx])
+		self.bestPop_cost.append(best)
 		#self.bestPop = 
 
 
@@ -154,18 +155,30 @@ class kimLee():
 	# Main function: similar to fig 6 in paper.
 	def main(self):
 		self.initPop()
+		
 		const_pose = list(self.pose)
 		for pos_sol in self.population:
 			pose = np.array(const_pose) #initial pose should not change for diff soln
-			groups = self.groupGenes(pos_sol)
 			
+			groups = self.groupGenes(pos_sol)
+			groupscost = []
 			bot_index = 0
 			for group in groups:
 				line = self.nextline(pose, group, bot_index, line = [])
 				bot_index = bot_index + 1
 				print('line',line)
-				print ('\nNext Group\n')
-			print ('\n Next Population)
+				
+				c = self.groupDist(line)
+				groupscost.append(c)
+				print ('Next Group')
+			
+			maxCost = self.groupCost(groupscost)
+			self.fitness.append(maxCost)
+	
+			print ('\n Next Population\n')
+		print('Costs for the population:\n',self.fitness)
+		self.evaluate()
+		
 		
 # ToDo Later: Vizualizer function to plot/animate algorithm
 class vizualizer():
